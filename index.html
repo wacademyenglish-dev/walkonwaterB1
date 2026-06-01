@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WOLFAITH Engine - Walking on Water (B1)</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Babel for JSX compilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;900&family=Playfair+Display:ital,wght@0,400;0,600;0,800;1,400;1,600&family=Cinzel:wght@400;700&display=swap');
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: radial-gradient(circle at center, #0f172a 0%, #020617 60%, #000000 100%);
+            color: #f4f4f5; 
+            overflow: hidden; 
+            margin: 0; height: 100vh; width: 100vw;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Classic Bible Fonts */
+        .font-serif-classic { font-family: 'Playfair Display', serif; }
+        .font-sans-ui { font-family: 'Inter', sans-serif; }
+        .font-cinzel { font-family: 'Cinzel', serif; }
+
+        /* Tokens */
+        .text-sacred-gold { color: #D4AF37; }
+        .bg-sacred-gold { background-color: #D4AF37; }
+
+        /* Storm Ocean Aesthetics */
+        .ocean-bg {
+            position: absolute; inset: 0;
+            background-image: url("https://images.unsplash.com/photo-1505322022379-7c3353ee6291?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80");
+            background-size: cover; background-position: center;
+            opacity: 0.2; mix-blend-mode: luminosity; pointer-events: none; z-index: 0;
+        }
+        .rain-overlay {
+            position: absolute; inset: 0;
+            background-image: url("https://www.transparenttextures.com/patterns/stardust.png");
+            opacity: 0.3; mix-blend-mode: color-dodge; pointer-events: none; z-index: 0;
+            animation: drift 20s linear infinite;
+        }
+
+        /* Divine Light Glow */
+        .divine-glow {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 120vw; height: 120vw; border-radius: 50%;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.08) 0%, transparent 60%);
+            pointer-events: none; z-index: 0; animation: pulseGlow 8s infinite alternate ease-in-out;
+        }
+        @keyframes pulseGlow { 0% { opacity: 0.6; transform: translate(-50%, -50%) scale(0.95); } 100% { opacity: 1.2; transform: translate(-50%, -50%) scale(1.05); } }
+
+        .cross-watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 90vh; color: #D4AF37; opacity: 0.015; pointer-events: none; z-index: 0; filter: drop-shadow(0 0 50px rgba(212,175,55,0.5)); }
+        
+        .gilded-edges { position: fixed; top: 0; bottom: 0; width: 12px; pointer-events: none; z-index: 10; background: repeating-linear-gradient(to bottom, #8B6508 0px, #D4AF37 2px, #B8860B 4px, #FFD700 5px); box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
+        .gilded-edge-left { left: 0; border-right: 2px solid rgba(0,0,0,0.9); }
+        .gilded-edge-right { right: 0; border-left: 2px solid rgba(0,0,0,0.9); }
+        
+        .corner-ornament { position: fixed; width: 80px; height: 80px; pointer-events: none; z-index: 50; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='%23D4AF37' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M0,20 Q20,20 20,0 M0,40 Q40,40 40,0 M20,20 Q40,40 60,20 Q40,0 20,20 M10,10 L30,30' opacity='0.6'/%3E%3C/svg%3E"); background-size: contain; background-repeat: no-repeat; }
+        .corner-tl { top: 15px; left: 25px; } .corner-tr { top: 15px; right: 25px; transform: scaleX(-1); } .corner-bl { bottom: 15px; left: 25px; transform: scaleY(-1); } .corner-br { bottom: 15px; right: 25px; transform: scale(-1, -1); }
+        .gold-foil-frame { position: fixed; inset: 15px 25px; pointer-events: none; z-index: 49; border: 1px solid rgba(212, 175, 55, 0.2); outline: 1px dashed rgba(212, 175, 55, 0.1); outline-offset: -5px; }
+
+        /* UI Elements */
+        .safe-scroll-container { display: flex; flex-direction: column; height: 100%; overflow-y: auto; overflow-x: hidden; padding: 0 30px;}
+        .safe-scroll-container::-webkit-scrollbar { width: 5px; }
+        .safe-scroll-container::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.4); border-radius: 5px; }
+        .safe-scroll-content { margin: auto; width: 100%; padding: 4rem 1rem 8rem 1rem; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+        .bible-card { background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(2, 6, 23, 0.98) 100%); backdrop-filter: blur(20px); border: 2px solid #1e293b; box-shadow: 0 0 0 1px rgba(212,175,55,0.1), 0 0 0 4px rgba(10,10,10,0.8), 0 0 0 5px rgba(212,175,55,0.3), 0 30px 60px rgba(0,0,0,0.9); border-radius: 6px; position: relative; width: 100%; max-width: 1000px; padding: 3rem; }
+        .bible-card::before { content: ''; position: absolute; inset: 8px; border: 1px dashed rgba(212,175,55,0.2); pointer-events: none; }
+        
+        .btn-gold { background: linear-gradient(135deg, #FFDF73 0%, #D4AF37 40%, #996515 80%, #5c3c08 100%); color: #050505; font-weight: 900; text-transform: uppercase; letter-spacing: 0.2em; border: 1px solid #FFED99; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3), inset 0 2px 5px rgba(255,255,255,0.5); transition: all 0.3s ease; border-radius: 3px; padding: 16px 36px; cursor: pointer; text-shadow: 0 1px 1px rgba(255,255,255,0.3); display: inline-flex; align-items: center; justify-content: center; }
+        .btn-gold:hover:not(:disabled) { filter: brightness(1.15); transform: translateY(-3px); box-shadow: 0 10px 30px rgba(212, 175, 55, 0.6); }
+
+        /* The Sinking Faith Mechanic */
+        .ocean-container { position: relative; width: 100%; max-width: 600px; height: 350px; background: linear-gradient(to bottom, #0f172a 0%, #020617 100%); border: 4px solid #1e293b; border-radius: 8px; overflow: hidden; margin: 0 auto; box-shadow: inset 0 0 50px rgba(0,0,0,0.9); }
+        .wave-layer { position: absolute; bottom: -20px; left: -50%; width: 200%; height: 100px; background: #1e293b; border-top: 2px solid #334155; border-radius: 40%; animation: waveAction 4s infinite alternate ease-in-out; opacity: 0.8;}
+        .wave-layer-2 { position: absolute; bottom: -40px; left: -30%; width: 150%; height: 120px; background: #0f172a; border-top: 3px solid #1e293b; border-radius: 45%; animation: waveAction 3s infinite alternate-reverse ease-in-out; }
+        @keyframes waveAction { 0% { transform: translateX(0) rotate(-5deg); } 100% { transform: translateX(-50px) rotate(5deg); } }
+        
+        .peter-box { position: absolute; left: 50%; bottom: 40%; transform: translateX(-50%); width: 80px; height: 120px; transition: all 2s cubic-bezier(0.25, 1, 0.5, 1); z-index: 10; display: flex; flex-direction: column; align-items: center;}
+        .sinking .peter-box { bottom: -10%; opacity: 0.5; filter: blur(2px); }
+        .saved .peter-box { bottom: 50%; }
+        
+        .focus-word { background: rgba(0,0,0,0.7); border: 1px solid #334155; color: #94a3b8; padding: 10px 20px; border-radius: 4px; cursor: pointer; transition: all 0.3s; font-family: 'Playfair Display', serif; font-size: 1.2rem; z-index: 20; position: absolute; }
+        .focus-word:hover { border-color: #D4AF37; color: #fff; background: rgba(212,175,55,0.2); }
+        
+        .divine-hand { position: absolute; top: -100px; left: 50%; transform: translateX(-50%); opacity: 0; transition: all 1s; z-index: 15; color: #D4AF37; filter: drop-shadow(0 0 20px #D4AF37); }
+        .saved .divine-hand { top: 20%; opacity: 1; }
+
+        /* Teacher Tools */
+        .side-panel { position: fixed; top: 0; right: -100%; width: 100%; max-width: 500px; height: 100vh; background: rgba(2, 6, 23, 0.98); backdrop-filter: blur(20px); border-left: 2px solid #D4AF37; z-index: 100; transition: right 0.5s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; box-shadow: -20px 0 50px rgba(0,0,0,0.9); }
+        .side-panel.open { right: 0; }
+        .praise-overlay { position: fixed; inset: 0; pointer-events: none; z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        .praise-text { font-family: 'Playfair Display', serif; font-size: 5rem; color: #FFD700; text-shadow: 0 0 40px rgba(212,175,55,1), 0 0 80px rgba(212,175,55,0.6); animation: praiseFade 3s ease-out forwards; font-weight: 900; font-style: italic; }
+        @keyframes praiseFade { 0% { opacity: 0; transform: scale(0.5); } 20% { opacity: 1; transform: scale(1.1); } 80% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.5); } }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fadeIn { animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes slideDownFade { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-slideDownFade { animation: slideDownFade 0.4s ease-out forwards; }
+        @keyframes drift { 0% { background-position: 0 0; } 100% { background-position: 500px 500px; } }
+
+        .vocab-trigger { color: #D4AF37; border-bottom: 2px dashed rgba(212,175,55,0.4); cursor: pointer; transition: all 0.3s; position: relative; font-weight: bold; }
+        .vocab-trigger:hover { color: #fff; border-bottom-style: solid; text-shadow: 0 0 15px rgba(212,175,55,0.9); }
+        
+        .lang-toggle { position: absolute; top: 2rem; right: 3rem; z-index: 100; background: rgba(10, 10, 10, 0.8); border: 1px solid rgba(212, 175, 55, 0.4); color: #D4AF37; padding: 8px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer; transition: all 0.3s; backdrop-filter: blur(5px); display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .lang-toggle:hover { background: rgba(212, 175, 55, 0.2); color: #FFF; border-color: #D4AF37; }
+    </style>
+</head>
+<body class="text-lg md:text-xl selection:bg-[#D4AF37]/30 selection:text-white">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const YOUTUBE_ID = "O7WWi65gb14"; 
+
+        const t = (obj, lang) => {
+            if (!obj) return '';
+            if (typeof obj === 'string') return obj;
+            return obj[lang] || obj['en'] || '';
+        };
+
+        const Icon = ({ name, size = 24, className = "", style={} }) => (
+            <i className={`fa-solid fa-${name} ${className}`} style={{ fontSize: size, ...style }}></i>
+        );
+
+        const Divider = () => (
+            <div className="flex items-center justify-center w-full my-8 opacity-60">
+                <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent"></div>
+                <div className="mx-6 text-[#D4AF37] text-sm"><Icon name="water" size={14} /></div>
+                <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent via-[#D4AF37] to-transparent"></div>
+            </div>
+        );
+
+        // ==========================================
+        // 🛠️ TEACHER TOOLS
+        // ==========================================
+        const TeacherTools = ({ isFs, toggleFs, lang, toggleLang }) => {
+            const [open, setOpen] = useState(false);
+            const [praise, setPraise] = useState(false);
+
+            const triggerPraise = () => { setPraise(true); setTimeout(() => setPraise(false), 3000); };
+
+            return (
+                <React.Fragment>
+                    <div className="fixed top-6 right-6 z-[100] flex gap-3">
+                        <button onClick={toggleLang} className="bg-black/80 border border-[#D4AF37]/50 text-[#D4AF37] px-4 h-12 rounded hover:bg-[#D4AF37]/20 transition-all font-bold text-xs uppercase tracking-widest backdrop-blur-md shadow-[0_0_15px_rgba(0,0,0,0.8)]">
+                            <Icon name="globe" size={14} className="mr-2"/> {lang === 'en' ? 'PT' : 'EN'}
+                        </button>
+                        <button onClick={() => setOpen(!open)} className="bg-black/80 border border-[#D4AF37]/50 text-[#D4AF37] w-12 h-12 rounded hover:bg-[#D4AF37]/20 transition-all flex items-center justify-center backdrop-blur-md shadow-[0_0_15px_rgba(0,0,0,0.8)]"><Icon name="feather" size={18} /></button>
+                        <button onClick={triggerPraise} className="bg-black/80 border border-emerald-500/50 text-emerald-400 w-12 h-12 rounded hover:bg-emerald-500/20 transition-all flex items-center justify-center backdrop-blur-md shadow-[0_0_15px_rgba(0,0,0,0.8)]"><Icon name="star" size={18} /></button>
+                        <button onClick={toggleFs} className="bg-black/80 border border-blue-500/50 text-blue-400 w-12 h-12 rounded hover:bg-blue-500/20 transition-all flex items-center justify-center backdrop-blur-md shadow-[0_0_15px_rgba(0,0,0,0.8)]"><Icon name={isFs ? "compress" : "expand"} size={18} /></button>
+                    </div>
+
+                    <div className={`side-panel p-8 ${open ? 'open' : ''}`}>
+                        <div className="flex justify-between items-center mb-8 border-b border-zinc-800 pb-4 pt-16">
+                            <h2 className="text-[#D4AF37] font-serif-classic text-2xl italic flex items-center gap-3"><Icon name="feather" size={20}/> Theological Notes</h2>
+                            <button onClick={() => setOpen(false)} className="text-zinc-500 hover:text-white"><Icon name="xmark" size={28}/></button>
+                        </div>
+                        <textarea className="flex-1 w-full bg-[#020617]/50 border border-zinc-700 rounded p-6 text-zinc-300 font-sans-ui text-lg leading-relaxed resize-none outline-none focus:border-[#D4AF37] shadow-inner transition-all" placeholder={lang === 'en' ? "Write notes..." : "Escreva as notas da aula..."}></textarea>
+                    </div>
+
+                    {praise && (
+                        <div className="praise-overlay">
+                            <div className="praise-text flex flex-col items-center">
+                                <Icon name="crown" size={100} className="mb-6 text-[#D4AF37]" />
+                                <span>{lang === 'en' ? "EXCELLENT!" : "EXCELENTE!"}</span>
+                            </div>
+                        </div>
+                    )}
+                </React.Fragment>
+            );
+        };
+
+        // ==========================================
+        // 🧩 B1 COMPONENTS
+        // ==========================================
+
+        const CoverSlide = ({ s, lang, next }) => (
+            <div className="text-center animate-fadeIn flex flex-col items-center w-full max-w-4xl z-10">
+                <Icon name="water" size={60} className="text-[#D4AF37] mb-8 drop-shadow-[0_0_30px_rgba(212,175,55,0.8)]" />
+                <h1 className="text-5xl md:text-8xl font-serif-classic text-white mb-6 italic tracking-tight drop-shadow-[0_0_20px_rgba(0,0,0,1)]">{t(s.title, lang)}</h1>
+                <h2 className="text-xl md:text-2xl text-[#D4AF37] font-sans-ui font-black mb-8 tracking-[0.3em] uppercase drop-shadow-md">{t(s.subtitle, lang)}</h2>
+                <Divider />
+                <div className="flex gap-4 text-xs font-bold text-zinc-300 uppercase tracking-widest mb-12 bg-black/40 px-6 py-3 border border-[#D4AF37]/20 rounded backdrop-blur-md">
+                    <span>{s.level}</span> <span className="text-[#D4AF37]">|</span> <span>{s.grammar}</span>
+                </div>
+                <button onClick={next} className="btn-gold text-lg px-12 py-4"><Icon name="play" className="mr-3" /> {lang === 'en' ? 'Start Journey' : 'Iniciar Jornada'}</button>
+            </div>
+        );
+
+        const GuideSlide = ({ s, lang }) => (
+            <div className="bible-card text-left animate-fadeIn z-10">
+                <div className="flex items-center gap-4 mb-8 border-b border-[#D4AF37]/30 pb-4">
+                    <Icon name="scroll" size={40} className="text-[#D4AF37]" />
+                    <h2 className="text-3xl font-serif-classic text-[#D4AF37]">{t(s.title, lang)}</h2>
+                </div>
+                <p className="text-zinc-300 font-sans-ui text-xl leading-relaxed font-light">{t(s.content, lang)}</p>
+            </div>
+        );
+
+        const DiscussionSlide = ({ s, lang }) => (
+            <div className="flex flex-col items-center justify-center h-full w-full max-w-4xl mx-auto p-8 animate-fadeIn z-10 text-center">
+                <Icon name={s.icon || "comments"} size={50} className="text-[#D4AF37] mb-8 opacity-80 drop-shadow-[0_0_15px_rgba(212,175,55,0.5)]" />
+                <h2 className="text-2xl font-sans-ui font-black mb-6 text-[#D4AF37] uppercase tracking-[0.2em]">{t(s.title, lang)}</h2>
+                <p className="text-3xl md:text-5xl text-white font-serif-classic italic leading-relaxed mb-12">"{t(s.question, lang)}"</p>
+                <div className="bg-black/60 border border-[#1e293b] p-8 w-full max-w-2xl text-left backdrop-blur-md rounded">
+                    <p className="text-[#D4AF37] font-bold uppercase tracking-widest text-[10px] mb-4 flex items-center gap-2">
+                        <Icon name="lightbulb" size={14}/> {lang === 'en' ? 'Speaking Starters (B1)' : 'Para Iniciar a Conversa (B1)'}
+                    </p>
+                    <div className="space-y-3">
+                        {t(s.hint, lang).split('/').map((h, i) => (
+                            <p key={i} className="text-lg text-zinc-300 font-sans-ui font-light border-l-2 border-zinc-700 pl-4 py-1 hover:border-[#D4AF37] transition-colors cursor-default">
+                                "{h.trim()}"
+                            </p>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+
+        const HolyRelics = ({ lang }) => {
+            const [activeRelic, setActiveRelic] = useState(null);
+            const [showFollowUp, setShowFollowUp] = useState(false);
+
+            const relics = [
+                { id: 'boat', icon: 'ship', color: '#8ba8cc', title: { en: 'The Boat', pt: 'O Barco' }, meaning: { en: 'Comfort and Safety.', pt: 'Conforto e Segurança.' }, secret: { en: "The boat represents our comfort zone. Peter had to leave the boat to experience the miracle.", pt: "O barco representa a nossa zona de conforto. Pedro teve de sair do barco para viver o milagre." }, followUpQ: { en: "What is your 'boat' right now? What keeps you too comfortable?", pt: "Qual é o teu 'barco' agora? O que te mantém demasiado confortável?" }, followUpHint: { en: "My boat is my routine... / I am afraid to leave my...", pt: "O meu barco é a minha rotina... / Tenho medo de deixar o meu..." } },
+                { id: 'wind', icon: 'wind', color: '#94a3b8', title: { en: 'The Wind', pt: 'O Vento' }, meaning: { en: 'Distractions and Fear.', pt: 'Distrações e Medo.' }, secret: { en: "The wind didn't sink Peter. Looking at the wind instead of Jesus is what made him sink.", pt: "O vento não afundou Pedro. Olhar para o vento em vez de Jesus foi o que o fez afundar." }, followUpQ: { en: "What 'winds' distract you from your faith?", pt: "Que 'ventos' te distraem da tua fé?" }, followUpHint: { en: "Social media is a wind that... / Worrying about the future...", pt: "As redes sociais são um vento que... / Preocupar-me com o futuro..." } },
+                { id: 'hand', icon: 'hand-holding-hand', color: '#D4AF37', title: { en: 'The Hand', pt: 'A Mão' }, meaning: { en: 'Immediate Rescue.', pt: 'Resgate Imediato.' }, secret: { en: "Jesus didn't wait for Peter to swim. He immediately reached out His hand when Peter called.", pt: "Jesus não esperou que Pedro nadasse. Ele estendeu imediatamente a mão quando Pedro chamou." }, followUpQ: { en: "How does it feel to know God's hand is always ready?", pt: "Como te sentes ao saber que a mão de Deus está sempre pronta?" }, followUpHint: { en: "It makes me feel safe. / I know that if I fail, He...", pt: "Faz-me sentir seguro. / Eu sei que se falhar, Ele..." } }
+            ];
+
+            const handleRelicClick = (id) => {
+                if (activeRelic !== id) {
+                    setActiveRelic(id);
+                    setShowFollowUp(false);
+                }
+            };
+
+            const active = relics.find(r => r.id === activeRelic);
+
+            return (
+                <div className="w-full max-w-4xl text-center animate-fadeIn z-10 mx-auto pt-10">
+                    <h2 className="text-2xl font-sans-ui font-black mb-4 text-[#D4AF37] uppercase tracking-[0.3em] drop-shadow-md">
+                        {lang === 'en' ? "The Sea Relics" : "As Relíquias do Mar"}
+                    </h2>
+                    <p className="text-zinc-400 font-serif-classic italic mb-12">
+                        {lang === 'en' ? "Touch an artifact to uncover its meaning." : "Toque num artefacto para descobrir o seu significado."}
+                    </p>
+
+                    <div className="flex justify-center gap-12 mb-8 border-b-2 border-zinc-800 pb-8">
+                        {relics.map(r => (
+                            <div key={r.id} onClick={() => handleRelicClick(r.id)} 
+                                 className={`cursor-pointer transition-all duration-300 ${activeRelic === r.id ? 'scale-125 drop-shadow-[0_0_30px_rgba(212,175,55,0.8)] opacity-100' : 'opacity-60 hover:opacity-100 hover:-translate-y-2'}`}
+                                 style={{ color: r.color }}>
+                                <Icon name={r.icon} size={60} />
+                            </div>
+                        ))}
+                    </div>
+
+                    {active && (
+                        <div className="bible-card text-left flex flex-col md:flex-row gap-6 items-center w-full !p-8 animate-slideDownFade">
+                            <div className="flex-1">
+                                <p className="font-sans-ui font-black text-xs uppercase tracking-widest text-[#8ba8cc] mb-2">
+                                    {lang === 'en' ? 'B1 Dictionary' : 'Dicionário B1'}
+                                </p>
+                                <h3 className="font-serif-classic text-4xl font-bold mb-2 text-white border-b border-zinc-700 pb-2">
+                                    {t(active.title, lang)}
+                                </h3>
+                                <p className="font-sans-ui text-xl font-bold text-[#D4AF37] mt-4">
+                                    "{t(active.meaning, lang)}"
+                                </p>
+                            </div>
+                            <div className="flex-1 flex flex-col gap-4">
+                                <div className="bg-black/60 p-5 rounded border border-zinc-800 shadow-inner">
+                                    <p className="font-sans-ui font-black text-[10px] uppercase tracking-widest text-zinc-500 mb-2 flex items-center gap-2">
+                                        <Icon name="feather" size={12}/> {lang === 'en' ? "The Scribe's Secret" : "O Segredo do Escriba"}
+                                    </p>
+                                    <p className="font-serif-classic italic text-lg leading-relaxed text-zinc-300">
+                                        {t(active.secret, lang)}
+                                    </p>
+                                </div>
+                                {active.followUpQ && (
+                                    <div className="bg-[#0f172a]/80 p-5 rounded border border-blue-900/50 flex flex-col justify-center shadow-inner">
+                                        {!showFollowUp ? (
+                                            <button onClick={() => setShowFollowUp(true)} className="text-[#D4AF37] font-bold text-sm uppercase tracking-widest hover:text-white transition-colors flex items-center justify-center py-1">
+                                                <Icon name="comments" className="mr-2"/> {lang === 'en' ? "Discuss Concept" : "Discutir Conceito"}
+                                            </button>
+                                        ) : (
+                                            <div className="animate-fadeIn">
+                                                <p className="text-blue-400 font-bold uppercase tracking-widest text-[10px] mb-2">Reflection</p>
+                                                <p className="text-base text-white font-serif-classic italic mb-2">"{t(active.followUpQ, lang)}"</p>
+                                                <p className="text-xs text-zinc-400 font-sans-ui italic border-l-2 border-blue-500 pl-2">"{t(active.followUpHint, lang)}"</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const VideoChunkSlide = ({ s, lang }) => {
+            const videoSrc = `https://www.youtube.com/embed/${s.videoId}?start=${s.start}&end=${s.end}&rel=0&modestbranding=1&showinfo=0`;
+            return (
+                <div className="flex flex-col items-center justify-center h-full w-full max-w-5xl mx-auto p-6 animate-fadeIn text-center z-10">
+                    <p className="text-zinc-500 font-sans-ui font-bold tracking-[0.3em] text-[10px] uppercase mb-4">Scene Chunk {s.chunk}</p>
+                    <h2 className="text-3xl font-serif-classic italic text-[#D4AF37] mb-2">{t(s.title, lang)}</h2>
+                    <p className="text-sm text-zinc-400 font-sans-ui font-bold tracking-widest uppercase mb-8">{t(s.mission, lang)}</p>
+                    <div className="w-full aspect-video bg-black border border-[#D4AF37]/30 shadow-[0_0_40px_rgba(0,0,0,0.8)] p-2 rounded relative">
+                        <div className="absolute inset-0 border border-[#D4AF37]/20 rounded pointer-events-none"></div>
+                        <iframe className="w-full h-full" src={videoSrc} frameBorder="0" allow="autoplay; encrypted-media" allowFullScreen></iframe>
+                    </div>
+                </div>
+            );
+        };
+
+        const ScriptSlide = ({ s, lang }) => {
+            const [showFollowUp, setShowFollowUp] = useState(false);
+            return (
+                <div className="flex flex-col items-center justify-center h-full w-full max-w-5xl mx-auto p-6 animate-fadeIn z-10">
+                    <p className="text-zinc-500 font-sans-ui font-bold tracking-[0.3em] text-[10px] uppercase mb-8">Text Analysis</p>
+                    <div className="w-full flex flex-col md:flex-row gap-8 items-stretch">
+                        <div className="flex-[1.5] bible-card !p-10 flex flex-col justify-center border-l-4 border-l-[#D4AF37]">
+                            <p className="text-xs text-[#D4AF37] font-bold uppercase tracking-widest mb-4">{t(s.speaker, lang)}</p>
+                            <p className="text-3xl md:text-4xl text-white font-serif-classic italic leading-relaxed">"{t(s.quote, lang)}"</p>
+                        </div>
+                        <div className="flex-1 flex flex-col gap-4">
+                            <div className="bg-black/80 p-6 border border-zinc-800 rounded">
+                                <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-2">{lang === 'en' ? 'Meaning' : 'Significado'}</p>
+                                <p className="text-base text-zinc-300 font-sans-ui leading-relaxed">{t(s.analysis, lang)}</p>
+                            </div>
+                            {s.grammarNote && (
+                                <div className="bg-[#0f172a]/80 p-6 border border-blue-900/50 rounded shadow-inner">
+                                    <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest mb-2">{lang === 'en' ? 'Grammar Rule' : 'Regra Gramatical'}</p>
+                                    <p className="text-sm text-zinc-300 font-sans-ui">{t(s.grammarNote, lang)}</p>
+                                </div>
+                            )}
+                            {s.followUpQ && (
+                                <div className="bg-[#1a0f0f]/80 p-6 border border-[#722F37]/50 rounded flex flex-col justify-center shadow-inner">
+                                    {!showFollowUp ? (
+                                        <button onClick={() => setShowFollowUp(true)} className="text-[#D4AF37] font-bold text-sm uppercase tracking-widest hover:text-white transition-colors flex items-center justify-center py-2"><Icon name="comments" className="mr-2"/> {lang === 'en' ? 'Discuss Meaning' : 'Discutir Sentido'}</button>
+                                    ) : (
+                                        <div className="animate-fadeIn">
+                                            <p className="text-[#D4AF37] font-bold uppercase tracking-widest text-[10px] mb-2">Reflection</p>
+                                            <p className="text-lg text-white font-serif-classic italic mb-3">"{t(s.followUpQ, lang)}"</p>
+                                            <p className="text-xs text-zinc-400 font-sans-ui italic border-l-2 border-[#D4AF37] pl-2">"{t(s.followUpHint, lang)}"</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const GrammarInterruptSlide = ({ lang }) => (
+            <div className="bible-card text-center animate-fadeIn z-10 mx-auto">
+                <Icon name="bolt" size={50} className="text-[#D4AF37] mb-6 drop-shadow-md" />
+                <h2 className="text-3xl font-sans-ui font-black mb-4 text-white tracking-[0.2em] uppercase">Interrupted Actions</h2>
+                <p className="text-zinc-400 mb-10 font-serif-classic italic text-xl">{lang==='en'?'Past Continuous vs Past Simple.':'Passado Contínuo vs Passado Simples.'}</p>
+                
+                <div className="grid md:grid-cols-2 gap-8 text-left">
+                    <div className="bg-black/40 border border-blue-900 p-6 rounded">
+                        <p className="text-blue-400 font-bold uppercase tracking-widest text-xs mb-4">Past Continuous (The Action)</p>
+                        <p className="text-zinc-300 text-sm mb-4">{lang==='en'?'A long action that was happening.':'Uma ação longa que estava a acontecer.'}</p>
+                        <p className="text-xl text-white font-serif-classic italic border-l-2 border-blue-500 pl-4">"Peter <span className="text-blue-400">was walking</span> on water."</p>
+                    </div>
+                    <div className="bg-black/40 border border-red-900 p-6 rounded">
+                        <p className="text-red-500 font-bold uppercase tracking-widest text-xs mb-4">Past Simple (The Interruption)</p>
+                        <p className="text-zinc-300 text-sm mb-4">{lang==='en'?'A short action that interrupts.':'Uma ação curta que interrompe.'}</p>
+                        <p className="text-xl text-white font-serif-classic italic border-l-2 border-red-500 pl-4">"...when he <span className="text-red-400">saw</span> the wind."</p>
+                    </div>
+                </div>
+            </div>
+        );
+
+        // --- NEW MECHANIC: THE SINKING FAITH ---
+        const SinkingFaithSlide = ({ s, lang, nextStep }) => {
+            const [state, setState] = useState('normal'); // normal, sinking, saved
+            const [msg, setMsg] = useState("");
+
+            const handleWord = (isCorrect) => {
+                if(state === 'saved') return;
+                if(isCorrect) {
+                    setState('saved');
+                    setMsg(lang === 'en' ? "Focus restored. He caught you." : "Foco restaurado. Ele agarrou-te.");
+                    setTimeout(nextStep, 3500);
+                } else {
+                    setState('sinking');
+                    setMsg(lang === 'en' ? "You looked at the storm. Sinking." : "Olhaste para a tempestade. A afundar.");
+                    setTimeout(() => { setState('normal'); setMsg(""); }, 2500);
+                }
+            };
+
+            return (
+                <div className="w-full max-w-4xl mx-auto flex flex-col items-center justify-center animate-fadeIn text-center z-10 px-4">
+                    <h2 className="text-2xl font-sans-ui font-black mb-4 text-[#D4AF37] uppercase tracking-[0.3em] drop-shadow-md">{t(s.title, lang)}</h2>
+                    <p className="text-zinc-300 font-serif-classic italic mb-8 text-xl h-14">
+                        {msg || t(s.instruction, lang)}
+                    </p>
+
+                    <div className={`ocean-container ${state}`}>
+                        <div className="wave-layer-2"></div>
+                        <div className="wave-layer"></div>
+                        
+                        {/* Peter (The User) */}
+                        <div className="peter-box">
+                            <Icon name="person" size={50} className="text-white drop-shadow-lg" />
+                            <div className="w-10 h-2 bg-blue-900/50 mt-2 rounded-[100%] blur-sm"></div>
+                        </div>
+
+                        {/* Divine Hand (Jesus) */}
+                        <div className="divine-hand">
+                            <Icon name="hand-holding-hand" size={60} />
+                        </div>
+
+                        {/* Word Targets */}
+                        {state !== 'saved' && (
+                            <React.Fragment>
+                                <div onClick={() => handleWord(false)} className="focus-word" style={{ top: '20%', left: '10%' }}>The Wind</div>
+                                <div onClick={() => handleWord(true)} className="focus-word" style={{ top: '15%', right: '20%', borderColor: '#D4AF37' }}>Jesus</div>
+                                <div onClick={() => handleWord(false)} className="focus-word" style={{ bottom: '30%', left: '20%' }}>The Waves</div>
+                            </React.Fragment>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const QuizSlide = ({ s, lang, nextAction }) => {
+            const [selected, setSelected] = useState(null);
+            return (
+                <div className="flex flex-col items-center justify-center h-full w-full max-w-4xl mx-auto p-8 animate-fadeIn text-center z-10">
+                    <p className="text-[#D4AF37] font-sans-ui font-bold tracking-[0.3em] text-[10px] uppercase mb-8">{lang === 'en' ? 'Knowledge Check' : 'Verificação'}</p>
+                    <h2 className="text-3xl md:text-4xl font-serif-classic italic text-white mb-10">{t(s.question, lang)}</h2>
+                    <div className="w-full flex flex-col gap-4">
+                        {s.options.map((opt, i) => (
+                            <button key={i} onClick={() => { setSelected(i); if(i === s.answerIndex) setTimeout(nextAction, 2500); }} 
+                                className={`p-6 text-left border rounded transition-all ${selected === i && i === s.answerIndex ? 'bg-emerald-900/30 border-emerald-500' : selected === i && i !== s.answerIndex ? 'bg-red-900/30 border-red-500' : 'bg-black/60 border-zinc-700 hover:border-[#D4AF37]'}`}>
+                                <p className="text-xl text-white font-sans-ui">{t(opt, lang)}</p>
+                            </button>
+                        ))}
+                    </div>
+                    {selected !== null && (
+                        <div className="mt-8">
+                            {selected === s.answerIndex ? 
+                                <p className="text-emerald-400 font-bold text-lg animate-fadeIn">{t(s.explanation, lang)}</p> : 
+                                <p className="text-red-400 font-bold text-lg animate-fadeIn">{lang === 'en' ? "Incorrect. Try again." : "Incorreto. Tente de novo."}</p>
+                            }
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const SyntaxBuilderSlide = ({ s, lang, nextStep }) => {
+            const [built, setBuilt] = useState([]);
+            const [available, setAvailable] = useState([]);
+            const [msg, setMsg] = useState("");
+
+            useEffect(() => { 
+                setAvailable([...s.words].sort(() => Math.random() - 0.5)); 
+                setBuilt([]);
+                setMsg("");
+            }, [s.words]);
+
+            const handleWord = (w) => { setBuilt([...built, w]); setAvailable(available.filter(av => av !== w)); };
+
+            const check = () => {
+                if(built.join(" ") === s.correctPhrase) {
+                    setMsg(lang === 'en' ? "Grammar secured." : "Gramática segura.");
+                    setTimeout(nextStep, 2500);
+                } else {
+                    setMsg(lang === 'en' ? "Sinking... Try again." : "Afundando... Tente de novo.");
+                    setAvailable([...s.words].sort(() => Math.random() - 0.5)); setBuilt([]);
+                }
+            };
+
+            return (
+                <div className="bible-card mx-auto max-w-4xl z-10 text-center animate-fadeIn">
+                    <h2 className="font-sans-ui font-black text-2xl text-sacred-gold uppercase tracking-[0.2em] mb-6">Build the Truth</h2>
+                    <p className="text-xl text-zinc-300 mb-8 font-serif-classic italic">{lang === 'en' ? "Put the words in the correct order to walk." : "Coloque as palavras na ordem correta para caminhar."}</p>
+
+                    <div className="min-h-[100px] border-2 border-dashed border-sacred-gold/40 p-6 flex flex-wrap gap-4 mb-8 bg-black/40 items-center justify-center shadow-inner rounded">
+                        {built.map((w, i) => <div key={i} className="bg-white text-black px-6 py-3 font-bold font-serif-classic rounded shadow-md">{w}</div>)}
+                    </div>
+                    
+                    <div className="flex flex-wrap justify-center gap-4 mb-8">
+                        {available.map((w, i) => <div key={i} onClick={() => handleWord(w)} className="bg-zinc-800 text-white px-6 py-3 font-bold font-serif-classic rounded opacity-70 hover:opacity-100 cursor-pointer border border-zinc-600">{w}</div>)}
+                    </div>
+
+                    <button onClick={check} className="btn-gold w-full text-sm">{lang === 'en' ? 'Verify Phrase' : 'Verificar Frase'}</button>
+                    <p className="text-center mt-6 text-xl font-bold h-8 text-sacred-gold tracking-widest uppercase">{msg}</p>
+                </div>
+            );
+        };
+
+        const PrayerRoom = ({ lang }) => {
+            const [recording, setRecording] = useState(false);
+            const [recorded, setRecorded] = useState(false);
+            const [progress, setProgress] = useState(0);
+
+            useEffect(() => {
+                let interval;
+                if (recording) { interval = setInterval(() => { setProgress(p => { if (p >= 100) { setRecording(false); setRecorded(true); return 100; } return p + 2; }); }, 100); }
+                return () => clearInterval(interval);
+            }, [recording]);
+
+            const statusText = recording ? (lang === 'en' ? "Recording..." : "A gravar...") : recorded ? (lang === 'en' ? "Prayer Sent" : "Oração Enviada") : (lang === 'en' ? "Tap to Record" : "Toque para Gravar");
+
+            return (
+                <div className="bible-card text-center animate-fadeIn mx-auto z-10 max-w-3xl">
+                    <p className="text-[#D4AF37] font-sans-ui font-bold tracking-[0.3em] text-[10px] uppercase mb-4">The Prayer Room</p>
+                    <h2 className="text-5xl font-serif-classic italic text-white mb-6">Speak Life</h2>
+                    <p className="text-zinc-400 font-sans-ui text-base mb-10">{lang === 'en' ? "Read the prayer aloud. Practice the past tenses." : "Leia a oração em voz alta. Pratique os tempos verbais do passado."}</p>
+
+                    <div className="bg-[#0f172a]/50 border border-[#1e293b] p-8 md:p-12 mb-10 rounded shadow-inner">
+                        <p className="text-3xl font-serif-classic italic text-zinc-200 leading-relaxed">
+                            "Lord, when I <span className="text-red-400 font-bold">was sinking</span>...<br/><br/>
+                            You <span className="text-emerald-400 font-bold border-b-2 border-emerald-500/50">saved</span> me.<br/><br/>
+                            Help me to look at You.<br/><br/>
+                            Amen."
+                        </p>
+                    </div>
+
+                    <div className="flex flex-col items-center">
+                        <button onClick={() => { if(!recorded && !recording){ setRecording(true); setProgress(0); } }} disabled={recorded}
+                            className={`w-24 h-24 rounded-full flex items-center justify-center transition-all ${recording ? 'bg-red-900 text-red-500 animate-pulse shadow-[0_0_40px_rgba(220,38,38,0.6)]' : recorded ? 'bg-emerald-900 text-emerald-500 border-2 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'bg-black border-2 border-[#D4AF37] text-[#D4AF37] hover:bg-[#1a170f] hover:scale-105 shadow-[0_0_15px_rgba(212,175,55,0.3)]'}`}>
+                            <Icon name={recorded ? "check" : "microphone-lines"} size={40} />
+                        </button>
+                        {recording && (<div className="w-56 h-3 bg-zinc-800 mt-6 rounded-full overflow-hidden border border-zinc-700"><div className="h-full bg-gradient-to-r from-[#4a6582] to-[#8ba8cc] transition-all" style={{width: `${progress}%`}}></div></div>)}
+                        <p className="mt-6 text-sm font-bold uppercase tracking-widest text-[#D4AF37]">{statusText}</p>
+                    </div>
+                </div>
+            );
+        };
+
+        const WritingSlide = ({ s, lang }) => (
+            <div className="flex flex-col items-center justify-center h-full w-full max-w-4xl mx-auto p-8 animate-fadeIn z-10 text-center">
+                <Icon name="feather-pointed" size={50} className="text-[#D4AF37] mb-8 opacity-80" />
+                <h2 className="text-3xl font-sans-ui font-black mb-8 text-white uppercase tracking-widest">{t(s.title, lang)}</h2>
+                <p className="text-2xl text-zinc-300 font-serif-classic italic leading-relaxed mb-8">{t(s.sub, lang) || (lang === 'en' ? "Open the Theological Notes (Top Right) and write your reflection." : "Abra as Notas Teológicas (Canto Superior Direito) e escreva a sua reflexão.")}</p>
+                <div className="bg-black/60 border border-[#1e293b] p-8 w-full text-left rounded shadow-xl">
+                    <p className="text-[#D4AF37] font-bold uppercase tracking-widest text-xs mb-4">Prompt</p>
+                    <p className="text-xl text-zinc-200 font-sans-ui font-light">{t(s.prompt, lang)}</p>
+                </div>
+            </div>
+        );
+
+        const EndSlide = ({ lang }) => (
+            <div className="flex flex-col items-center justify-center h-full w-full max-w-4xl mx-auto text-center p-8 animate-fadeIn z-10">
+                <Icon name="water" size={80} className="text-[#D4AF37] mb-8 opacity-90 drop-shadow-[0_0_30px_rgba(212,175,55,0.8)]" />
+                <h1 className="text-5xl md:text-7xl font-serif-classic italic mb-6 text-white tracking-tight drop-shadow-lg">The storm is over.</h1>
+                <p className="text-[#D4AF37] font-sans-ui text-sm font-bold tracking-[0.3em] uppercase mb-12">
+                    {lang === 'en' ? "You are safe in the boat." : "Você está seguro no barco."}
+                </p>
+                <button className="btn-gold px-12 py-4 text-sm" onClick={() => window.location.reload()}>{lang === 'en' ? 'Return to the shore' : 'Voltar à Margem'}</button>
+            </div>
+        );
+
+        // ==========================================
+        // 📚 25 SLIDES DATA (B1 Level)
+        // ==========================================
+        const SLIDES_DATA = [
+            { type: "intro", title: { en: "Walking on Water", pt: "Andar sobre as Águas" }, subtitle: { en: "Keep your eyes on Him", pt: "Mantenha os olhos n'Ele" }, level: "B1 (Intermediate)", grammar: "Past Continuous vs Past Simple" },
+            { type: "guide", title: { en: "Teacher's Guide", pt: "Guia do Professor" }, content: { en: "Welcome to V8.0. In this 25-page B1 masterclass, we explore the epic storm on the Sea of Galilee. Students will master interrupted actions using Past Continuous and Past Simple, while learning the spiritual importance of focus.", pt: "Bem-vindo à V8.0. Nesta aula B1 de 25 páginas, exploramos a tempestade épica no Mar da Galileia. Os alunos dominarão as ações interrompidas usando Passado Contínuo e Passado Simples." } },
+            { type: "discussion", icon: "cloud-bolt", title: { en: "The Storm", pt: "A Tempestade" }, question: { en: "Are you afraid of storms? What do you do when a storm hits?", pt: "Tens medo de tempestades? O que fazes quando chega uma tempestade?" }, hint: { en: "I am afraid of... / When a storm hits, I usually...", pt: "Eu tenho medo de... / Quando a tempestade chega, eu..." } },
+            { type: "relics" }, // 4. NOVO: Holy Relics of the Sea
+            { type: "video_chunk", chunk: 1, videoId: YOUTUBE_ID, start: 5, end: 120, title: { en: "The Miracle", pt: "O Milagre" }, mission: { en: "Watch Peter step out of the boat.", pt: "Veja Pedro sair do barco." } },
+            { type: "discussion", icon: "shoe-prints", title: { en: "The First Step", pt: "O Primeiro Passo" }, question: { en: "Why did Peter step out of the boat?", pt: "Por que Pedro saiu do barco?" }, hint: { en: "He stepped out because... / I think he wanted to...", pt: "Ele saiu porque... / Eu acho que ele queria..." } },
+            { type: "grammarInterrupt" }, // Slide 7: Past Continuous vs Past Simple
+            { type: "builder", words: ["Peter", "was", "walking", "when", "he", "saw", "the", "wind."], correctPhrase: "Peter was walking when he saw the wind.", title: { en: "Build the Phrase", pt: "Construa a Frase" } },
+            { type: "video_chunk", chunk: 2, videoId: YOUTUBE_ID, start: 120, end: 180, title: { en: "The Sinking", pt: "O Afundar" }, mission: { en: "Watch what happens when Peter looks away.", pt: "Veja o que acontece quando Pedro desvia o olhar." } },
+            { type: "script", speaker: { en: "Jesus", pt: "Jesus" }, quote: { en: "Why did you doubt?", pt: "Por que duvidaste?" }, analysis: { en: "Doubt came when Peter focused on the wind, not on Jesus.", pt: "A dúvida veio quando Pedro se focou no vento, não em Jesus." }, followUpQ: { en: "When you face a storm in your life, what makes you doubt the most?", pt: "Quando enfrentas uma tempestade na vida, o que te faz duvidar mais?" }, followUpHint: { en: "I doubt when I look at... / It is hard to trust when...", pt: "Duvido quando olho para... / É difícil confiar quando..." } },
+            { type: "sinkingfaith", title: { en: "The Focus Lens", pt: "Lente de Foco" }, instruction: { en: "Tap the correct focus to stop sinking.", pt: "Toque no foco correto para parar de afundar." } },
+            { type: "quiz", question: { en: "What interrupted Peter's walk on water?", pt: "O que interrompeu a caminhada de Pedro sobre a água?" }, options: [{ en: "He was tired.", pt: "Ele estava cansado." }, { en: "He saw the wind and became afraid.", pt: "Ele viu o vento e teve medo." }, { en: "The boat broke.", pt: "O barco quebrou." }], answerIndex: 1, explanation: { en: "Correct! The distraction caused the sinking.", pt: "Correto! A distração causou o afundamento." } },
+            { type: "discussion", icon: "mobile-screen", title: { en: "Distractions", pt: "Distrações" }, question: { en: "What are the 'winds' (distractions) in your life that make you sink?", pt: "Quais são os 'ventos' (distrações) na tua vida que te fazem afundar?" }, hint: { en: "My phone is a distraction when... / I lose focus when...", pt: "O meu telemóvel é uma distração quando... / Perco o foco quando..." } },
+            { type: "builder", words: ["He", "was", "sinking", "when", "Jesus", "saved", "him."], correctPhrase: "He was sinking when Jesus saved him.", title: { en: "Build the Phrase", pt: "Construa a Frase" } },
+            { type: "script", speaker: { en: "Peter", pt: "Pedro" }, quote: { en: "Lord, save me!", pt: "Senhor, salva-me!" }, analysis: { en: "A short, desperate cry. And Jesus answered immediately.", pt: "Um grito curto e desesperado. E Jesus respondeu imediatamente." }, grammarNote: { en: "'Save' is an imperative command used as a plea.", pt: "'Save' é um comando imperativo usado como apelo." }, followUpQ: { en: "Have you ever prayed a short, desperate prayer like this?", pt: "Já alguma vez fizeste uma oração curta e desesperada como esta?" }, followUpHint: { en: "Yes, once when I was... / Short prayers are powerful because...", pt: "Sim, uma vez quando estava... / Orações curtas são poderosas porque..." } },
+            { type: "discussion", icon: "life-ring", title: { en: "The Rescue", pt: "O Resgate" }, question: { en: "Jesus immediately reached out His hand. What does this teach us?", pt: "Jesus estendeu imediatamente a mão. O que isto nos ensina?" }, hint: { en: "It teaches us that God... / Even when we fail, He...", pt: "Ensina-nos que Deus... / Mesmo quando falhamos, Ele..." } },
+            { type: "prayer" },
+            { type: "discussion", icon: "anchor", title: { en: "Finding Stability", pt: "Encontrando Estabilidade" }, question: { en: "What helps you stay calm during difficult times?", pt: "O que te ajuda a manter a calma durante tempos difíceis?" }, hint: { en: "I stay calm by... / My anchor is...", pt: "Eu mantenho a calma... / A minha âncora é..." } },
+            { type: "writing", title: { en: "The Scribe's Journal", pt: "O Diário do Escriba" }, prompt: { en: "Write a sentence: 'I was [doing something] when the storm [hit]'.", pt: "Escreve uma frase: 'I was [doing something] when the storm [hit]'." } },
+            { type: "discussion", icon: "eye", title: { en: "Keeping Focus", pt: "Mantendo o Foco" }, question: { en: "How can we 'keep our eyes on Jesus' in our daily lives?", pt: "Como podemos 'manter os olhos em Jesus' nas nossas vidas diárias?" }, hint: { en: "We can focus by praying... / By reading the Bible...", pt: "Podemos focar orando... / Lendo a Bíblia..." } },
+            { type: "quiz", question: { en: "What did Jesus do when Peter started to sink?", pt: "O que Jesus fez quando Pedro começou a afundar?" }, options: [{ en: "He laughed at him.", pt: "Ele riu-se dele." }, { en: "He immediately reached out his hand.", pt: "Ele estendeu imediatamente a mão." }, { en: "He told him to swim.", pt: "Ele disse-lhe para nadar." }], answerIndex: 1, explanation: { en: "Yes! Jesus always reaches out to save us.", pt: "Sim! Jesus sempre estende a mão para nos salvar." } },
+            { type: "builder", words: ["Keep", "your", "eyes", "fixed", "on", "Jesus."], correctPhrase: "Keep your eyes fixed on Jesus.", title: { en: "Key Lesson", pt: "Lição Chave" } },
+            { type: "discussion", icon: "hand-holding-hand", title: { en: "Helping Others", pt: "Ajudando os Outros" }, question: { en: "How can you help a friend who is 'sinking'?", pt: "Como podes ajudar um amigo que está a 'afundar'?" }, hint: { en: "I can help by listening to them... / By offering a hand...", pt: "Posso ajudar ouvindo-os... / Oferecendo uma mão..." } },
+            { type: "writing", title: { en: "Final Thoughts", pt: "Pensamentos Finais" }, prompt: { en: "Write a short prayer asking for help to stay focused on God.", pt: "Escreve uma oração curta pedindo ajuda para manter o foco em Deus." } },
+            { type: "end" }
+        ];
+
+        // --- MAIN APP ---
+        function App() {
+            const [slideIdx, setSlideIdx] = useState(0);
+            const [lang, setLang] = useState('en');
+            const [isFs, setIsFs] = useState(false);
+
+            useEffect(() => {
+                const handleFsChange = () => setIsFs(!!document.fullscreenElement);
+                document.addEventListener('fullscreenchange', handleFsChange);
+                return () => document.removeEventListener('fullscreenchange', handleFsChange);
+            }, []);
+
+            const toggleFs = async () => {
+                try {
+                    if (!document.fullscreenElement) {
+                        if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
+                    } else {
+                        if (document.exitFullscreen) await document.exitFullscreen();
+                    }
+                } catch (e) { console.warn("Fullscreen issue:", e); }
+            };
+
+            const toggleLang = () => setLang(l => l === 'en' ? 'pt' : 'en');
+            const next = () => { if (slideIdx < SLIDES_DATA.length - 1) setSlideIdx(s => s + 1); };
+            const prev = () => { if (slideIdx > 0) setSlideIdx(s => s - 1); };
+
+            const current = SLIDES_DATA[slideIdx];
+
+            const renderSlide = () => {
+                switch (current.type) {
+                    case "intro": return <CoverSlide s={current} lang={lang} next={next} />;
+                    case "guide": return <GuideSlide s={current} lang={lang} />;
+                    case "discussion": return <DiscussionSlide s={current} lang={lang} />;
+                    case "relics": return <HolyRelics lang={lang} />;
+                    case "video_chunk": return <VideoChunkSlide s={current} lang={lang} />;
+                    case "script": return <ScriptSlide s={current} lang={lang} />;
+                    case "grammarInterrupt": return <GrammarInterruptSlide lang={lang} />;
+                    case "sinkingfaith": return <SinkingFaithSlide s={current} lang={lang} nextStep={next} />;
+                    case "quiz": return <QuizSlide s={current} lang={lang} nextAction={next} />;
+                    case "builder": return <SyntaxBuilderSlide key={slideIdx} s={current} lang={lang} nextStep={next} />;
+                    case "prayer": return <PrayerRoom lang={lang} />;
+                    case "writing": return <WritingSlide s={current} lang={lang} />;
+                    case "end": return <EndSlide lang={lang} />;
+                    default: return <div className="text-white text-2xl z-10">Slide not found.</div>;
+                }
+            };
+
+            return (
+                <div className="w-full h-screen relative flex flex-col font-sans-ui selection:bg-[#D4AF37]/40 selection:text-white bg-[#020617]">
+                    <div className="ocean-bg"></div>
+                    <div className="rain-overlay"></div>
+                    <div className="cross-watermark"><Icon name="cross" /></div>
+                    <div className="divine-glow"></div>
+                    <div className="gilded-edges gilded-edge-left"></div>
+                    <div className="gilded-edges gilded-edge-right"></div>
+                    <div className="corner-ornament corner-tl"></div>
+                    <div className="corner-ornament corner-tr"></div>
+                    <div className="corner-ornament corner-bl"></div>
+                    <div className="corner-ornament corner-br"></div>
+                    <div className="gold-foil-frame"></div>
+                    
+                    <TeacherTools lang={lang} toggleLang={toggleLang} isFs={isFs} toggleFs={toggleFs} />
+
+                    <div className="flex-1 relative z-10 w-full h-full overflow-y-auto safe-scroll-container">
+                        <div className="safe-scroll-content">
+                            {renderSlide()}
+                        </div>
+                    </div>
+
+                    {/* Navigation Footer */}
+                    {slideIdx > 0 && current.type !== 'end' && (
+                        <div className="z-50 w-full p-6 absolute bottom-0 flex flex-col items-center bg-gradient-to-t from-[#020617] via-[#020617]/90 to-transparent">
+                            <div className="max-w-5xl w-full flex justify-between items-center relative">
+                                <button onClick={prev} disabled={slideIdx === 0} className="text-zinc-500 hover:text-[#D4AF37] font-bold text-xs uppercase tracking-widest disabled:opacity-30 transition-colors flex items-center gap-2 drop-shadow-md">
+                                    <Icon name="chevron-left" size={14} /> {lang === 'en' ? 'Back' : 'Anterior'}
+                                </button>
+                                
+                                <div className="absolute left-1/2 transform -translate-x-1/2 text-[#D4AF37] font-bold tracking-[0.3em] text-[10px] uppercase hidden sm:block opacity-70">
+                                    {lang === 'en' ? 'PAGE' : 'PÁGINA'} {slideIdx + 1} {lang === 'en' ? 'OF' : 'DE'} {SLIDES_DATA.length}
+                                </div>
+
+                                <button onClick={next} disabled={slideIdx === SLIDES_DATA.length - 1} className="text-[#D4AF37] hover:text-white font-bold text-xs uppercase tracking-widest disabled:opacity-30 transition-colors flex items-center gap-2 drop-shadow-md">
+                                    {lang === 'en' ? 'Next' : 'Próximo'} <Icon name="chevron-right" size={14} />
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+        
+        const rootElement = document.getElementById('root');
+        const root = ReactDOM.createRoot(rootElement);
+        root.render(<App />);
+    </script>
+</body>
+</html>
